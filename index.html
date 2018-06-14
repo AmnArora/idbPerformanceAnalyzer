@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title></title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Faker/3.1.0/faker.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/async/2.6.1/async.min.js"></script>
+	<script src="common/dummydata.js"></script>
+	<script type="text/javascript" src="idb/schema.js"></script>
+	<script type="text/javascript" src="idb/db.js"></script>
+</head>
+
+<body style="padding: 10px">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-3">
+				<select name="operation" id="operation" class="form-control" onchange="onOperationChange()">
+					<option value="" selected disabled>Select the operation to perform</option>
+					<option value="add">Add</option>
+					<option value="fetch">Fetch</option>
+					<option value="delete">Delete</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<input id='numberOfRecords' type="text" class="form-control" />
+			</div>
+			<div class="col-md-2 text-center">
+				<button type="submit" class="btn btn-primary" onclick="performOperation()">Perform</button>
+			</div>
+			<div class="col-md-3">
+				<p class="time" style="font-size: 28px; color: green;">0.00</p>
+			</div>
+		</div>
+	</div>
+</body>
+<script>
+	function onOperationChange(e) {
+		let operation = $('#operation').val();
+		let placeholder = '';
+		if (operation === 'add') {
+			placeholder = 'Enter Number of records to insert';
+		} else if (operation === 'fetch') {
+			placeholder = 'Enter the ID(s) to find(comma separated)';
+		}
+		$('#numberOfRecords').val('');
+		$('#numberOfRecords').attr('placeholder', placeholder);
+	}
+	function addDummyData(numberOfRecords) {
+		let dummyDataArr = [];
+		for (let i = 0; i < numberOfRecords; i++) {
+			let dummydata = {
+				name: faker.name.findName(),
+				email: faker.internet.email(),
+				website: faker.internet.url(),
+				address: faker.address.streetAddress() + faker.address.city() + faker.address.country(),
+				bio: faker.lorem.sentences(),
+				image: faker.image.avatar()
+			}
+			dummyDataArr.push(dummydata);
+		}
+		let start = window.performance.now();
+		storeData('dummyTable', dummyDataArr, function (data) {
+			let end = window.performance.now();
+			$('.time').html((end - start).toFixed(2));
+		})
+	}
+
+	function mySelect(opt, cb) {
+		if (opt && opt.data) {
+			let conditions = Object.keys(opt.data);
+			if (conditions.length > 1) {
+				cb({ code: 'NOT_SUPPORTED', message: 'Currently only single indexes are supported' });
+			}
+			let condition = conditions[0];
+			if (Array.isArray(opt.data[condition])) {
+				// Array provided
+				if (!opt.data[condition].length) {
+					return cb({ result: [] });
+				}
+				let done = [];
+				return async.eachLimit(opt.data[condition], 5, async.apply(selectFromDB, opt.table, condition, done), async.apply(asyncCB, done));
+			} else {
+				// only one entry for condition
+				return select(opt.table, opt.data, cb);
+			}
+		}
+		function selectFromDB(table, conditionKey, done, id, callback) {
+			select(table, { [conditionKey]: id }, (res) => {
+				if (res.__ndf && res.message === 'No Data Found') {
+					return callback();
+				} else if (res.error && res.code === 'DB_ERROR') {
+					return callback(res);
+				}
+				done.push(res.result);
+				return callback();
+			});
+		}
+		function asyncCB(done, err) {
+			if (err) {
+				return cb(err);
+			}
+			return cb({ result: done });
+		}
+
+	}
+	function fetchDummyData(ids) {
+		ids = ids ? ids.split(',') : '';
+		let start = window.performance.now();
+		let data = {};
+		if(ids[0] !== '' && ids.length) {
+			data = { id: ids }
+		}
+		mySelect({table: 'dummyTable', data}, function (data) {
+			console.log(data);
+			let end = window.performance.now();
+			$('.time').html((end - start).toFixed(2));
+		});
+	}
+
+	function performOperation() {
+		let operation = $('#operation').val();
+		let numberOfRecords = $('#numberOfRecords').val();
+		switch (operation) {
+			case 'add': addDummyData(numberOfRecords);
+				break;
+			case 'fetch': fetchDummyData(numberOfRecords);
+				break;
+		}
+	}
+</script>
+
+</html>

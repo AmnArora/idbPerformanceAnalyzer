@@ -1,0 +1,9 @@
+.table thead th, .table td {
+    text-align: center;
+}
+.table tbody tr:first-child {
+    background: antiquewhite
+}
+.table tbody tr:first-child td{
+    color: red;
+}

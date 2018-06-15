@@ -11,14 +11,18 @@
 	<script src="common/dummydata.js"></script>
 	<script type="text/javascript" src="idb/schema.js"></script>
 	<script type="text/javascript" src="idb/db.js"></script>
+	<link rel="stylesheet" href="common/style.css">
 </head>
 
-<body style="padding: 10px">
+<body>
 	<div class="container">
-		<div class="row">
-			<div class="col-md-3">
+		<nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="background: #012b72">
+			<a class="navbar-brand" href="#">Paytm</a>
+		</nav>
+		<div class="row" style="margin-top: 10px">
+			<div class="col-md-4">
 				<select name="operation" id="operation" class="form-control" onchange="onOperationChange()">
-					<option value="" selected disabled>Select the operation to perform</option>
+					<option value="" selected disabled>Select the operation</option>
 					<option value="add">Add</option>
 					<option value="fetch">Fetch</option>
 					<option value="delete">Delete</option>
@@ -27,16 +31,37 @@
 			<div class="col-md-4">
 				<input id='numberOfRecords' type="text" class="form-control" />
 			</div>
-			<div class="col-md-2 text-center">
+			<div class="col-md-4 text-center">
 				<button type="submit" class="btn btn-primary" onclick="performOperation()">Perform</button>
 			</div>
-			<div class="col-md-3">
-				<p class="time" style="font-size: 28px; color: green;">0.00</p>
-			</div>
+		</div>
+		<div class="row" style="margin-top: 10px">
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th>Operation</th>
+						<th>Input</th>
+						<th>Time</th>
+					</tr>
+				</thead>
+				<tbody class="tableBody">
+
+				</tbody>
+			</table>
 		</div>
 	</div>
 </body>
 <script>
+	function addToTable(operation, input, time) {
+		$('.tableBody').prepend(`
+			<tr>
+				<td>${operation}</td>
+				<td>${input}</td>
+				<td>${time}</td>
+			</tr>
+		`);
+	}
+
 	function onOperationChange(e) {
 		let operation = $('#operation').val();
 		let placeholder = '';
@@ -64,7 +89,7 @@
 		let start = window.performance.now();
 		storeData('dummyTable', dummyDataArr, function (data) {
 			let end = window.performance.now();
-			$('.time').html((end - start).toFixed(2));
+			addToTable('add', numberOfRecords, (end - start).toFixed(2));
 		})
 	}
 
@@ -110,13 +135,12 @@
 		ids = ids ? ids.split(',') : '';
 		let start = window.performance.now();
 		let data = {};
-		if(ids[0] !== '' && ids.length) {
+		if (ids[0] !== '' && ids.length) {
 			data = { id: ids }
 		}
-		mySelect({table: 'dummyTable', data}, function (data) {
-			console.log(data);
+		mySelect({ table: 'dummyTable', data }, function (data) {
 			let end = window.performance.now();
-			$('.time').html((end - start).toFixed(2));
+			addToTable('fetch', (ids != '') ? ids : `All (${data.result.length})`, (end - start).toFixed(2));
 		});
 	}
 

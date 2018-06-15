@@ -92,7 +92,7 @@ function insert(section, data, cb) {
             let putOperation = store.put(data[i]);
             putOperation.onsuccess = putNext;
             putOperation.onerror = function (error) {
-                debugger;
+
             };
             ++i;
         } else { // complete
@@ -189,7 +189,6 @@ function find(section, data, cb) {
         }
 
         ob.onsuccess = function (e) {
-            debugger;
             if (typeof e.target.result === 'undefined') {
                 return cb({ __ndf: true, message: 'No Data Found' });
             }

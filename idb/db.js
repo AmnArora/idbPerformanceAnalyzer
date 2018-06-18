@@ -61,7 +61,7 @@ function removeData(section, data, cb) {
         //on error
         request.onsuccess = (event) => {
             removeDBConnection = event.target.result;
-            this.delete(section, data, cb);
+            this.deleteD(section, data, cb);
         };
     } else {
         this.deleteD(section, data, cb);
@@ -92,7 +92,7 @@ function insert(section, data, cb) {
             let putOperation = store.put(data[i]);
             putOperation.onsuccess = putNext;
             putOperation.onerror = function (error) {
-
+                alert('Error when inserting data', JSON.stringify(error));
             };
             ++i;
         } else { // complete
@@ -104,7 +104,12 @@ function insert(section, data, cb) {
 function deleteD(section, data, cb) {
     let transaction = removeDBConnection.transaction(section, 'readwrite'); //versionchange
     let store = transaction.objectStore(section);
-    let del = store.delete(data.id);
+    let del;
+    if(data.id) {
+        del = store.delete(Number(data.id));
+    } else {
+        del = store.clear()
+    }
 
     del.onsuccess = function (e) {
         return cb({ result: 'Done' });

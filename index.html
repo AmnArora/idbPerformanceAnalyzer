@@ -11,6 +11,7 @@
 	<script src="common/dummydata.js"></script>
 	<script type="text/javascript" src="idb/schema.js"></script>
 	<script type="text/javascript" src="idb/db.js"></script>
+	<script type="text/javascript" src="idb/base.js"></script>
 	<link rel="stylesheet" href="common/style.css">
 </head>
 
@@ -29,7 +30,7 @@
 				</select>
 			</div>
 			<div class="col-md-4">
-				<input id='numberOfRecords' type="text" class="form-control" />
+				<input id='numberOfRecords' type="text" class="form-control" placeholder="Please chose an operation"/>
 			</div>
 			<div class="col-md-4 text-center">
 				<button type="submit" class="btn btn-primary" onclick="performOperation()">Perform</button>
@@ -69,6 +70,8 @@
 			placeholder = 'Enter Number of records to insert';
 		} else if (operation === 'fetch') {
 			placeholder = 'Enter the ID(s) to find(comma separated)';
+		} else if (operation === 'delete') {
+			placeholder = 'Enter the ID(s) to delete(comma separated)';
 		}
 		$('#numberOfRecords').val('');
 		$('#numberOfRecords').attr('placeholder', placeholder);
@@ -93,44 +96,7 @@
 		})
 	}
 
-	function mySelect(opt, cb) {
-		if (opt && opt.data) {
-			let conditions = Object.keys(opt.data);
-			if (conditions.length > 1) {
-				cb({ code: 'NOT_SUPPORTED', message: 'Currently only single indexes are supported' });
-			}
-			let condition = conditions[0];
-			if (Array.isArray(opt.data[condition])) {
-				// Array provided
-				if (!opt.data[condition].length) {
-					return cb({ result: [] });
-				}
-				let done = [];
-				return async.eachLimit(opt.data[condition], 5, async.apply(selectFromDB, opt.table, condition, done), async.apply(asyncCB, done));
-			} else {
-				// only one entry for condition
-				return select(opt.table, opt.data, cb);
-			}
-		}
-		function selectFromDB(table, conditionKey, done, id, callback) {
-			select(table, { [conditionKey]: id }, (res) => {
-				if (res.__ndf && res.message === 'No Data Found') {
-					return callback();
-				} else if (res.error && res.code === 'DB_ERROR') {
-					return callback(res);
-				}
-				done.push(res.result);
-				return callback();
-			});
-		}
-		function asyncCB(done, err) {
-			if (err) {
-				return cb(err);
-			}
-			return cb({ result: done });
-		}
-
-	}
+	
 	function fetchDummyData(ids) {
 		ids = ids ? ids.split(',') : '';
 		let start = window.performance.now();
@@ -138,9 +104,22 @@
 		if (ids[0] !== '' && ids.length) {
 			data = { id: ids }
 		}
-		mySelect({ table: 'dummyTable', data }, function (data) {
+		base.select({ table: 'dummyTable', data }, function (data) {
 			let end = window.performance.now();
 			addToTable('fetch', (ids != '') ? ids : `All (${data.result.length})`, (end - start).toFixed(2));
+		});
+	}
+
+	function deleteDummyData(ids) {
+		ids = ids ? ids.split(',') : '';
+		let start = window.performance.now();
+		let data = {};
+		if (ids[0] !== '' && ids.length) {
+			data = { id: ids }
+		}
+		base.remove({ table: 'dummyTable', data }, function(data) {
+			let end = window.performance.now();
+			addToTable('delete', (ids != '') ? ids : `All (${data.result.length})`, (end - start).toFixed(2));
 		});
 	}
 
@@ -151,6 +130,8 @@
 			case 'add': addDummyData(numberOfRecords);
 				break;
 			case 'fetch': fetchDummyData(numberOfRecords);
+				break;
+			case 'delete': deleteDummyData(numberOfRecords);
 				break;
 		}
 	}

@@ -106,6 +106,7 @@
 		}
 		base.select({ table: 'dummyTable', data }, function (data) {
 			let end = window.performance.now();
+			console.log(data);
 			addToTable('fetch', (ids != '') ? ids : `All (${data.result.length})`, (end - start).toFixed(2));
 		});
 	}

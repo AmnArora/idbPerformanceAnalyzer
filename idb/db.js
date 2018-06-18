@@ -143,33 +143,10 @@ function find(section, data, cb) {
                     }
                     return store.index(indexName).get(Number(indexVal));
                 },
-                'booking_id': function (indexName, indexVal) {
-                    return store.index(indexName).get(indexVal);
-                },
-                'ssn_instance_id': function (indexName, indexVal) {
-                    return store.index(indexName).getAll(Number(indexVal));
-                },
-                'isOnline': function (indexName, indexVal) {
-                    return store.index(indexName).getAll(Number(data.isOnline));
-                },
-                'status': function (indexName, indexVal) {
-                    return store.index(indexName).getAll(Number(data.status));
-                },
-                'tele_book_no': function (indexName, indexVal) {
-                    return store.index(indexName).getAll(indexVal);
-                },
-                'phone_number': function (indexName, indexVal) {
-                    return store.index(indexName).get(Number(indexVal));
-                },
                 'default': function (indexName) {
+                    // return store.index(indexName).openCursor();
                     return store.index(indexName).getAll();
-                },
-                status_code: function (indexName, indexVal) {
-                    return store.index(indexName).get(indexVal);
-                },
-                payment_mode: function (indexName, indexVal) {
-                    return store.index(indexName).get(indexVal);
-                },
+                }
             };
 
             if (!key.length) {
@@ -194,6 +171,15 @@ function find(section, data, cb) {
         }
 
         ob.onsuccess = function (e) {
+            // var cursor = ob.result;
+            // if (cursor) {
+            //     // Called for each matching record.
+            //     console.log(JSON.stringify(cursor.value));
+            //     cursor.continue();
+            // } else {
+            //     // No more matching records.
+            //     console.log(null);
+            // }
             if (typeof e.target.result === 'undefined') {
                 return cb({ __ndf: true, message: 'No Data Found' });
             }
@@ -201,6 +187,7 @@ function find(section, data, cb) {
             return cb({ result: e.target.result });
         };
         ob.onerror = function (e) {
+            alert(JSON.stringify(e.target.error.message))
             return cb({ error: true, code: 'DB_ERR', message: e.target.error });
         };
     } else {

@@ -1,5 +1,5 @@
 var base = {
-    select: function mySelect(opt, cb) {
+		select: function mySelect(opt, cb) {	
 		if (opt && opt.data) {
 			let conditions = Object.keys(opt.data);
 			if (conditions.length > 1) {

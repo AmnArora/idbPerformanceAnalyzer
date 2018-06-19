@@ -1,9 +1,21 @@
+html, body {
+    height: 100%;
+}
+body {
+    background: cornsilk;
+}
 .table thead th, .table td {
     text-align: center;
 }
 .table tbody tr:first-child {
-    background: antiquewhite
+    background: antiquewhite;
 }
 .table tbody tr:first-child td{
     color: red;
+}
+.app-navbar, .app-button {
+    background-color: #8667b7;
+} 
+.app-navbar .app-name {
+    color: white;
 }

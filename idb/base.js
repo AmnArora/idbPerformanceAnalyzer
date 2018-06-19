@@ -1,5 +1,5 @@
 var base = {
-		select: function mySelect(opt, cb) {	
+		select: function mySelect(opt, fromCursor, cb) {	
 		if (opt && opt.data) {
 			let conditions = Object.keys(opt.data);
 			if (conditions.length > 1) {
@@ -12,14 +12,14 @@ var base = {
 					return cb({ result: [] });
 				}
 				let done = [];
-				return async.eachLimit(opt.data[condition], 5, async.apply(selectFromDB, opt.table, condition, done), async.apply(asyncCB, done));
+				return async.eachLimit(opt.data[condition], 5, async.apply(selectFromDB, opt.table, condition, fromCursor, done), async.apply(asyncCB, done));
 			} else {
 				// only one entry for condition
-				return select(opt.table, opt.data, cb);
+				return select(opt.table, opt.data, fromCursor, cb);
 			}
 		}
-		function selectFromDB(table, conditionKey, done, id, callback) {
-			select(table, { [conditionKey]: id }, (res) => {
+		function selectFromDB(table, conditionKey,fromCursor, done, id, callback) {
+			select(table, { [conditionKey]: id }, fromCursor, (res) => {
 				if (res.__ndf && res.message === 'No Data Found') {
 					return callback();
 				} else if (res.error && res.code === 'DB_ERROR') {

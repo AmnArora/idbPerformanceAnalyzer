@@ -26,6 +26,7 @@
 					<option value="" selected disabled>Select the operation</option>
 					<option value="add">Add</option>
 					<option value="fetch">Fetch</option>
+					<option value="fetchCursor">Fetch using cursor</option>
 					<option value="delete">Delete</option>
 				</select>
 			</div>
@@ -42,7 +43,7 @@
 					<tr>
 						<th>Operation</th>
 						<th>Input</th>
-						<th>Time</th>
+						<th>Time (ms)</th>
 					</tr>
 				</thead>
 				<tbody class="tableBody">
@@ -68,7 +69,7 @@
 		let placeholder = '';
 		if (operation === 'add') {
 			placeholder = 'Enter Number of records to insert';
-		} else if (operation === 'fetch') {
+		} else if (operation === 'fetch' || operation === 'fetchCursor') {
 			placeholder = 'Enter the ID(s) to find(comma separated)';
 		} else if (operation === 'delete') {
 			placeholder = 'Enter the ID(s) to delete(comma separated)';
@@ -97,17 +98,17 @@
 	}
 
 	
-	function fetchDummyData(ids) {
+	function fetchDummyData(ids, fromCursor) {
 		ids = ids ? ids.split(',') : '';
 		let start = window.performance.now();
 		let data = {};
 		if (ids[0] !== '' && ids.length) {
 			data = { id: ids }
 		}
-		base.select({ table: 'dummyTable', data }, function (data) {
+		base.select({ table: 'dummyTable', data }, fromCursor, function (data) {
 			let end = window.performance.now();
-			console.log(data);
-			addToTable('fetch', (ids != '') ? ids : `All (${data.result.length})`, (end - start).toFixed(2));
+			let operation = fromCursor ? 'Fetch-cursor' : 'fetch';
+			addToTable(operation, (ids != '') ? ids : `All (${data.result.length})`, (end - start).toFixed(2));
 		});
 	}
 
@@ -130,7 +131,9 @@
 		switch (operation) {
 			case 'add': addDummyData(numberOfRecords);
 				break;
-			case 'fetch': fetchDummyData(numberOfRecords);
+			case 'fetch': fetchDummyData(numberOfRecords, false);
+				break;
+			case 'fetchCursor': fetchDummyData(numberOfRecords, true);
 				break;
 			case 'delete': deleteDummyData(numberOfRecords);
 				break;

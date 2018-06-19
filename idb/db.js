@@ -68,15 +68,15 @@ function removeData(section, data, cb) {
     }
 }
 
-function select(section, data, cb) {
+function select(section, data, fromCursor, cb) {
     if (!selectDBConnection) {
         let request = this.indexedDB.open('idbdb', idbVersion);
         request.onsuccess = (event) => {
             selectDBConnection = event.target.result;
-            this.find(section, data, cb);
+            this.find(section, data, fromCursor,cb);
         };
     } else {
-        this.find(section, data, cb);
+        this.find(section, data, fromCursor, cb);
     }
 }
 
@@ -119,7 +119,7 @@ function deleteD(section, data, cb) {
     };
 }
 
-function find(section, data, cb) {
+function find(section, data, fromCursor, cb) {
     if (selectDBConnection.objectStoreNames.contains(section)) {
         let transaction = selectDBConnection.transaction(section, 'readonly');
         let store = transaction.objectStore(section);
@@ -144,14 +144,20 @@ function find(section, data, cb) {
                     return store.index(indexName).get(Number(indexVal));
                 },
                 'default': function (indexName) {
-                    // return store.index(indexName).openCursor();
                     return store.index(indexName).getAll();
-                }
+                },
+                'defaultCursor': function (indexName) {
+                    return store.index(indexName).openCursor();
+                },
             };
 
             if (!key.length) {
                 let indexName = schema[section].indexName[schema[section].isIndexUnique.indexOf(true)];
-                ob = getQueryOnIndex['default'](indexName);
+                if(fromCursor) {
+                    ob = getQueryOnIndex['defaultCursor'](indexName);
+                } else {
+                    ob = getQueryOnIndex['default'](indexName);                    
+                }
             } else if (key.length && (schema[section].indexedFields.indexOf(key[0]) !== -1)) {
                 key = key[0];
                 let indexName = schema[section].indexName[schema[section].indexedFields.indexOf(key)];
@@ -169,22 +175,26 @@ function find(section, data, cb) {
         } catch (e) {
             return cb({ error: true, code: 'DB_ERR', message: 'IDB error : ' + e });
         }
-
-        ob.onsuccess = function (e) {
-            // var cursor = ob.result;
-            // if (cursor) {
-            //     // Called for each matching record.
-            //     console.log(JSON.stringify(cursor.value));
-            //     cursor.continue();
-            // } else {
-            //     // No more matching records.
-            //     console.log(null);
-            // }
-            if (typeof e.target.result === 'undefined') {
-                return cb({ __ndf: true, message: 'No Data Found' });
+        let resultData = [];
+        ob.onsuccess = (e) => {
+            if(fromCursor) {
+                var cursor = ob.result;
+                if (cursor) {
+                    // Called for each matching record.
+                    resultData.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    // No more matching records.
+                    return cb({ result: resultData });
+                    console.log(null);
+                }
+            } else {
+                if (typeof e.target.result === 'undefined') {
+                    return cb({ __ndf: true, message: 'No Data Found' });
+                }
+                for (let i = e.target.result.length - 1; i >= 0; i--) e.target.result[i].is_enabled === 0 && e.target.result.splice(i, 1); // This check should be removed once we have code in place to avoid entries with is_enabled = 0
+                return cb({ result: e.target.result });
             }
-            for (let i = e.target.result.length - 1; i >= 0; i--) e.target.result[i].is_enabled === 0 && e.target.result.splice(i, 1); // This check should be removed once we have code in place to avoid entries with is_enabled = 0
-            return cb({ result: e.target.result });
         };
         ob.onerror = function (e) {
             alert(JSON.stringify(e.target.error.message))
